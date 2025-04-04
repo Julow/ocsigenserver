@@ -1,6 +1,6 @@
 open Lwt.Infix
 
-let section = Lwt_log.Section.make "ocsigen:cohttp"
+let section = Logs.Src.create "ocsigen:cohttp"
 
 exception Ocsigen_http_error of Ocsigen_cookie_map.t * Cohttp.Code.status
 
@@ -38,7 +38,7 @@ let ( get_number_of_connected
       if !connected < 0 then exit 1;
       if c = !maxr
       then (
-        Lwt_log.ign_warning ~section "Number of connections now ok";
+        Logs.warn ~src:section (fun fmt -> fmt "Number of connections now ok");
         maxr := -1000;
         Lwt_mvar.put mvar ())
       else Lwt.return ())
@@ -120,7 +120,10 @@ let handler ~ssl ~address ~port ~connector (flow, conn) request body =
       connection_closed
   in
   let handle_error exn =
-    Lwt_log.ign_debug ~section ~exn "Got exception while handling request.";
+    Logs.debug ~src:section (fun fmt ->
+      fmt
+        ("Got exception while handling request." ^^ "@\n%s")
+        (Printexc.to_string exn));
     let headers, ret_code =
       match exn with
       | Ocsigen_http_error (cookies_to_set, code) ->
@@ -135,7 +138,10 @@ let handler ~ssl ~address ~port ~connector (flow, conn) request body =
       | Ocsigen_lib.Ocsigen_Bad_Request -> None, `Bad_request
       | Ocsigen_lib.Ocsigen_Request_too_long -> None, `Request_entity_too_large
       | exn ->
-          Lwt_log.ign_error ~section ~exn "Error while handling request.";
+          Logs.err ~src:section (fun fmt ->
+            fmt
+              ("Error while handling request." ^^ "@\n%s")
+              (Printexc.to_string exn));
           None, `Internal_server_error
     in
     let body =
@@ -201,15 +207,17 @@ let handler ~ssl ~address ~port ~connector (flow, conn) request body =
            (fun a ->
               try Unix.unlink a
               with Unix.Unix_error _ as exn ->
-                Lwt_log.ign_warning_f ~section ~exn
-                  "Error while removing file %s" a)
+                Logs.warn ~src:section (fun fmt ->
+                  fmt
+                    ("Error while removing file %s" ^^ "@\n%s")
+                    a (Printexc.to_string exn)))
            !filenames;
        Lwt.return_unit)
 
 let conn_closed (_flow, conn) =
   try
-    Lwt_log.ign_debug_f ~section "Connection closed:\n%s"
-      (Cohttp.Connection.to_string conn);
+    Logs.debug ~src:section (fun fmt ->
+      fmt "Connection closed:\n%s" (Cohttp.Connection.to_string conn));
     Lwt.wakeup (snd (Hashtbl.find connections conn)) ();
     Hashtbl.remove connections conn;
     Lwt.async decr_connected
