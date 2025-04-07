@@ -85,7 +85,12 @@ let loadfile pre post force file =
       addloaded file)
     else
       Logs.info ~src:section (fun fmt -> fmt "Extension %s already loaded" file)
-  with e -> raise (Dynlink_error (file, e))
+  with
+  | Dynlink.Error (Dynlink.Module_already_loaded m) ->
+      Logs.info ~src:section (fun fmt ->
+        fmt "While loading extension %s: Module %s cannot be loaded again" file
+          m)
+  | e -> raise (Dynlink_error (file, e))
 
 let id () = ()
 
