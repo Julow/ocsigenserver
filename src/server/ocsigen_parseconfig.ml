@@ -545,65 +545,6 @@ let parse_port =
               , int_of_string "port" (get r 2) )
           | None -> `All, int_of_string "port" s)))
 
-let parse_lwt_log_facility = function
-  | "auth" -> `Auth
-  | "authpriv" -> `Authpriv
-  | "console" -> `Console
-  | "cron" -> `Cron
-  | "daemon" -> `Daemon
-  | "ftp" -> `FTP
-  | "kernel" -> `Kernel
-  | "lpr" -> `LPR
-  | "local0" -> `Local0
-  | "local1" -> `Local1
-  | "local2" -> `Local2
-  | "local3" -> `Local3
-  | "local4" -> `Local4
-  | "local5" -> `Local5
-  | "local6" -> `Local6
-  | "local7" -> `Local7
-  | "mail" -> `Mail
-  | "ntp" -> `NTP
-  | "news" -> `News
-  | "security" -> `Security
-  | "syslog" -> `Syslog
-  | "uucp" -> `UUCP
-  | "user" -> `User
-  | t -> raise (Config_file_error ("Unknown " ^ t ^ " facility in <syslog>"))
-
-let parse_facility s =
-  (* Translating from [Lwt_log] facility type to [Syslog_message]. *)
-  let facility_code = function
-    | `Kernel -> 0
-    | `User -> 1
-    | `Mail -> 2
-    | `Daemon -> 3
-    | `Auth -> 4
-    | `Syslog -> 5
-    | `LPR -> 6
-    | `News -> 7
-    | `UUCP -> 8
-    | `Cron -> 9
-    | `Authpriv -> 10
-    | `FTP -> 11
-    | `NTP -> 12
-    | `Security -> 13
-    | `Console -> 14
-    | `Local0 -> 16
-    | `Local1 -> 17
-    | `Local2 -> 18
-    | `Local3 -> 19
-    | `Local4 -> 20
-    | `Local5 -> 21
-    | `Local6 -> 22
-    | `Local7 -> 23
-  in
-  match
-    Syslog_message.facility_of_int (facility_code (parse_lwt_log_facility s))
-  with
-  | Some s -> s
-  | None -> raise (Config_file_error ("Unknown " ^ s ^ " facility in <syslog>"))
-
 (* First parsing of config file *)
 
 let config_error_for_some s = function
@@ -652,7 +593,7 @@ let first_pass c =
         aux ssl ports sslports ll
     | Element (("syslog" as st), [], p) :: ll ->
         let str = String.lowercase_ascii (parse_string_tag st p) in
-        set_syslog_facility (Some (parse_facility str));
+        set_syslog_facility (Some str);
         aux ssl ports sslports ll
     | Element (("port" as st), atts, p) :: ll -> (
       match atts with

@@ -30,8 +30,6 @@
   react
   (ssl (>= 0.5.8))
   xml-light
-  logs
-  logs-syslog
-  syslog-message)
+  logs)
  (conflicts
   (pgocaml (< 2.2))))

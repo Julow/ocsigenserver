@@ -68,22 +68,9 @@ let open_files () =
   List.iter (fun close -> close ()) !close_loggers;
   close_loggers := [];
   match Ocsigen_config.get_syslog_facility () with
-  | Some facility ->
-      (* log to syslog *)
-      (* Syslog reporter cannot be closed *)
-      let syslog =
-        match Logs_syslog_unix.unix_reporter ~facility () with
-        | Ok r -> r
-        | Error msg -> failwith msg
-      in
-      Logs.set_reporter
-        (let broadcast_reporters = [syslog; stderr] in
-         { Logs.report =
-             (fun src level ~over k msgf ->
-               List.fold_left
-                 (fun k r () -> r.Logs.report src level ~over k msgf)
-                 k broadcast_reporters ()) });
-      Lwt.return ()
+  | Some _ ->
+      Logs.err (fun fmt -> fmt "Syslog is not supported");
+      exit 1
   | None ->
       (* log to files *)
       let open_channel path =

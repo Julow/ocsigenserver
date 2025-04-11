@@ -9,6 +9,4 @@
   ocsigen_cookie_map
   baselib
   http
-  logs
-  logs-syslog.unix
-  syslog-message))
+  logs))

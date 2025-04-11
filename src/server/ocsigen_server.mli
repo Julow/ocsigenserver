@@ -38,7 +38,7 @@ val start :
   -> ?datadir:string
   -> ?uploaddir:string option
   -> ?maxuploadfilesize:int64 option
-  -> ?syslog_facility:Syslog_message.facility option
+  -> ?syslog_facility:string option
   -> ?configfile:string
   -> ?usedefaulthostname:bool
   -> ?pidfile:string
