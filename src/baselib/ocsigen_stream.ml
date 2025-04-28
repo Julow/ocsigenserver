@@ -54,6 +54,12 @@ let make ?finalize:(g = fun _ -> Lwt.return ()) f =
 
 let next = Lazy.force
 
+let next_data stream =
+  next stream >>= function
+  | Finished None -> Lwt.return_none
+  | Finished (Some substream) -> next_data substream
+  | Cont (data, next_stream) -> Lwt.return (Some (data, next_stream))
+
 let rec get_aux st =
   lazy
     (Lwt.try_bind

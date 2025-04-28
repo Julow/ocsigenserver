@@ -77,11 +77,10 @@ let read_header ?downcase ?unfold ?strip s =
              Lwt.return
                (s, match_end (snd (S.search_forward end_of_header_re b 0))))
       (function
-        | Not_found -> (
-            Ocsigen_stream.enlarge_stream s >>= function
-            | Ocsigen_stream.Finished _ ->
-                Lwt.fail Ocsigen_stream.Stream_too_small
-            | Ocsigen_stream.Cont _ as s -> find_end_of_header s)
+        | Not_found ->
+            (* find_end_of_header will raise [Stream_too_small] if this reaches
+               the end of the stream. *)
+            Ocsigen_stream.enlarge_stream s >>= find_end_of_header
         | e -> Lwt.fail e)
   in
   find_end_of_header s >>= fun (s, end_pos) ->
@@ -97,10 +96,9 @@ let rec search_window s re start =
   try
     Lwt.return
       (s, snd (S.search_forward re (Ocsigen_stream.current_buffer s) start))
-  with Not_found -> (
-    Ocsigen_stream.enlarge_stream s >>= function
-    | Ocsigen_stream.Finished _ -> Lwt.fail Ocsigen_stream.Stream_too_small
-    | Ocsigen_stream.Cont _ as s -> search_window s re start)
+  with Not_found ->
+    (* [enlarge_stream] always return a Cont. *)
+    Ocsigen_stream.enlarge_stream s >>= fun s -> search_window s re start
 
 let search_end_of_line s k =
   (* Search LF beginning at position k *)

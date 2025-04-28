@@ -30,7 +30,7 @@ type 'a stream
     a function to retrieve the following data,
     or a finished stream with possibly another stream following.
 *)
-type 'a step = private Finished of 'a stream option | Cont of 'a * 'a stream
+type 'a step
 
 type 'a t
 type outcome = [`Success | `Failure]
@@ -44,6 +44,11 @@ val get : 'a t -> 'a stream
 
 val next : 'a stream -> 'a step Lwt.t
 (** get the next step of a stream.
+    Fails with [Interrupted e] if reading the thread failed with exception [e],
+    and with [Cancelled] if the thread has been cancelled. *)
+
+val next_data : 'a stream -> ('a * 'a stream) option Lwt.t
+(** Get the next step of a stream, possibly reading into the next substream.
     Fails with [Interrupted e] if reading the thread failed with exception [e],
     and with [Cancelled] if the thread has been cancelled. *)
 

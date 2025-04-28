@@ -122,9 +122,8 @@ and flush oz cont =
     Ocsigen_stream.cont s cont
 
 and next_cont oz stream =
-  Ocsigen_stream.next (stream : string Ocsigen_stream.stream) >>= fun e ->
-  match e with
-  | Ocsigen_stream.Finished None ->
+  Ocsigen_stream.next_data (stream : string Ocsigen_stream.stream) >>= function
+  | None ->
       Logs.info ~src:section (fun fmt ->
         fmt "End of stream: big cleaning for zlib");
       (* loop until there is nothing left to compress and flush *)
@@ -152,8 +151,7 @@ and next_cont oz stream =
           flush oz (fun () -> Ocsigen_stream.empty None))
       in
       finish ()
-  | Ocsigen_stream.Finished (Some s) -> next_cont oz s
-  | Ocsigen_stream.Cont (s, f) -> output oz f s 0 (String.length s)
+  | Some (s, f) -> output oz f s 0 (String.length s)
 
 (* deflate param : true = deflate ; false = gzip (no header in this case) *)
 let compress deflate stream : string Ocsigen_stream.t =
